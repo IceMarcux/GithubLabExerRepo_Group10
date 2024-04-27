@@ -1,82 +1,133 @@
-class Student(object):
-    """Represents a student."""
+"""
+File: bank.py
+This module defines the Bank class.
+"""
+import pickle
+import random
+from savingsaccount import SavingsAccount
 
-    def __init__(self, name, number):
-        """All scores are initially 0."""
-        self.name = name
-        self.scores = []
-        for count in range(number):
-            self.scores.append(0)
+class Bank:
+    """This class represents a bank as a collection of savnings accounts.
+    An optional file name is also associated
+    with the bank, to allow transfer of accounts to and
+    from permanent file storage."""
 
-    def getName(self):
-        """Returns the student's name."""
-        return self.name
-  
-    def setScore(self, i, score):
-        """Resets the ith score, counting from 1."""
-        self.scores[i - 1] = score
+    # The state of the bank is a dictionary of accounts and
+    # a file name.  If the file name is None, a file name
+    # for the bank has not yet been established.
 
-    def getScore(self, i):
-        """Returns the ith score, counting from 1."""
-        return self.scores[i - 1]
-   
-    def getAverage(self):
-        """Returns the average score."""
-        return sum(self.scores) / len(self._scores)
-    
-    def getHighScore(self):
-        """Returns the highest score."""
-        return max(self.scores)
- 
+    def __init__(self, fileName = None):
+        """Creates a new dictionary to hold the accounts.
+        If a file name is provided, loads the accounts from
+        a file of pickled accounts."""
+        self.accounts = {}
+        self.fileName = fileName
+        if fileName != None:
+            fileObj = open(fileName, 'rb')
+            while True:
+                try:
+                    account = pickle.load(fileObj)
+                    self.add(account)
+                except Exception:
+                    fileObj.close()
+                    break
+
     def __str__(self):
-        """Returns the string representation of the student."""
-        return "Name: " + self.name  + "\nScores: " + \
-               " ".join(map(str, self.scores))
+        """Returns the string representation of the bank."""
+        return "\n".join([str(v) for (k, v) in
+                          sorted(self.accounts.items(),
+                                 key=lambda cv: cv[1].getName())])
 
-    def __equal__(self, other):
-        """Returns if the students are equal or not"""
-        if (self.name == other.name):
-            return "Equal"
-        else:
-            return "Not Equal"
+    def makeKey(self, name, pin):
+        """Returns a key for the account."""
+        return name + "/" + pin
 
-    def __lessThan__(self, other):
-        """Returns if the first instance is less than the second instance"""
-        if (self.name < other.name):
-            return "Less Than"
-        else:
-            return "Not Less Than"
-    
-    def __greaterThan__(self, other):
-        """Returns if the first instance is greater than or equal to the second instance"""
-        if (self.name > other.name):
-            return "Greater Than"
-        elif (self.name == other.name):
-            return "Equal"
-        else:
-            return "Not Greater Than Nor Equal"
+    def add(self, account):
+        """Adds the account to the bank."""
+        key = self.makeKey(account.getName(), account.getPin())
+        self.accounts[key] = account
 
-def main():
-    """A simple test."""
-    studentA = Student("StudentA", 5)
-    print(studentA)
-    for i in range(1, 6):
-        studentA.setScore(i, 100)
-    print(studentA)
+    def remove(self, name, pin):
+        """Removes the account from the bank and
+        and returns it, or None if the account does
+        not exist."""
+        key = self.makeKey(name, pin)
+        return self.accounts.pop(key, None)
 
-    studentB = Student("StudentB", 5)
-    print(studentB)
-    for i in range(1, 6):
-        studentB.setScore(i, 100)
-    print(studentB)
+    def get(self, name, pin):
+        """Returns the account from the bank,
+        or returns None if the account does
+        not exist."""
+        key = self.makeKey(name, pin)
+        return self.accounts.get(key, None)
 
-    print("\n--Results--")
-    print(Student.__equal__(studentA, studentB))
-    print(Student.__lessThan__(studentA, studentB))
-    print(Student.__greaterThan__(studentA, studentB))
-    print("\n")
+    def computeInterest(self):
+        """Computes and returns the interest on
+        all accounts."""
+        total = 0
+        for account in self._accounts.values():
+            total += account.computeInterest()
+        return total
+
+    def getKeys(self):
+        """Returns a sorted list of keys."""
+        # Exercise
+        return []
+
+    def save(self, fileName = None):
+        """Saves pickled accounts to a file.  The parameter
+        allows the user to change file names."""
+        if fileName != None:
+            self.fileName = fileName
+        elif self.fileName == None:
+            return
+        fileObj = open(self.fileName, 'wb')
+        for account in self.accounts.values():
+            pickle.dump(account, fileObj)
+        fileObj.close()
+
+# Functions for testing
+       
+def createBank(numAccounts = 1):
+    """Returns a new bank with the given number of 
+    accounts."""
+    names = ("Ice", "Elly", "Mosh", "Love", "Gian",
+             "Vinz", "Neo", "Jarick")
+    bank = Bank()
+    upperPin = numAccounts + 1000
+    for pinNumber in range(1000, upperPin):
+        name = random.choice(names)
+        balance = float(random.randint(100, 1000))
+        bank.add(SavingsAccount(name, str(pinNumber), balance))
+    return bank
+
+def testAccount():
+    """Test function for savings account."""
+    account = SavingsAccount("Belle", "1000", 500.00)
+    print(account)
+    print(account.deposit(100))
+    print("Expect 600:", account.getBalance())
+    print(account.deposit(-50))
+    print("Expect 600:", account.getBalance())
+    print(account.withdraw(100))
+    print("Expect 500:", account.getBalance())
+    print(account.withdraw(-50))
+    print("Expect 500:", account.getBalance())
+    print(account.withdraw(100000))
+    print("Expect 500:", account.getBalance())
+
+def main(number = 10, fileName = None):
+    """Creates and prints a bank, either from
+    the optional file name argument or from the optional
+    number."""
+    testAccount()
+    if fileName:
+        bank = Bank(fileName)
+    else:
+        bank = createBank(number)
+    print(bank)
 
 if __name__ == "__main__":
     main()
 
-
+   
