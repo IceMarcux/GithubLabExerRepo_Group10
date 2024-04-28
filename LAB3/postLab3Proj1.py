@@ -55,7 +55,7 @@ def main():
     # Third method test for greater than or equal to
     print(student1 >= student2)  # False
     print(student1 >= student3)  # True
-    # pogi ako
+
 
 if __name__ == "__main__":
     main()
